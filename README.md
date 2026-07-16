@@ -1,4 +1,4 @@
-# 🎁 Corporate Gifting Platform
+# 🎁 Nazrana
 
 An enterprise-grade B2B platform designed to streamline corporate gifting. Empower organizations to easily launch gifting campaigns, upload recipients via CSV, allow recipients to seamlessly claim gifts, and track full analytics—all seamlessly managed from a centralized dashboard.
 

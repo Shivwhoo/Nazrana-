@@ -271,7 +271,7 @@ export class WalletService {
       doc.moveDown(4);
       doc.text('Bank Details for Transfer:');
       doc.text('Bank: Test Bank Ltd');
-      doc.text('Account Name: Corporate Gifting Platform');
+      doc.text('Account Name: Nazrana');
       doc.text('Account No: 1234567890');
       doc.text('IFSC: TEST0001234');
       

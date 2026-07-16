@@ -29,7 +29,7 @@ export class PdfService {
 
         // Details
         doc.fontSize(10).font('Helvetica-Bold').text('From:');
-        doc.font('Helvetica').text('Corporate Gifting Platform Inc.');
+        doc.font('Helvetica').text('Nazrana Inc.');
         doc.text('GSTIN: 29ABCDE1234F1Z5');
         doc.moveDown();
 

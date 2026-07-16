@@ -1,5 +1,5 @@
 /**
- * Seed script for the Corporate Gifting platform.
+ * Seed script for the Nazrana platform.
  * Run with DATABASE_URL set in environment:
  *   $env:DATABASE_URL="..."; node_modules\.bin\ts-node seed.ts
  */

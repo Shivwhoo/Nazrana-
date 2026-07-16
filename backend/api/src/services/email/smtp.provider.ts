@@ -23,7 +23,7 @@ export class SmtpEmailProvider implements EmailProvider {
     try {
       const tp = this.getTransporter();
       await tp.sendMail({
-        from: `"Gifting Platform" <${process.env.EMAIL_USER || process.env.SMTP_USER}>`,
+        from: `"Nazrana" <${process.env.EMAIL_USER || process.env.SMTP_USER}>`,
         to: options.to,
         subject: options.subject,
         html: options.html,
