@@ -3,9 +3,16 @@ import type { NextRequest } from 'next/server';
 import { auth } from '@/auth';
 
 export async function middleware(request: NextRequest) {
+  const path = request.nextUrl.pathname;
+  
+  // Skip admin auth for vendor and recipient routes
+  if (path.startsWith('/vendor') || path.startsWith('/r/')) {
+    return NextResponse.next();
+  }
+
   const session = await auth();
   
-  const isAuthRoute = request.nextUrl.pathname.startsWith('/login') || request.nextUrl.pathname.startsWith('/register');
+  const isAuthRoute = path.startsWith('/login') || path.startsWith('/register');
   
   if (!session && !isAuthRoute) {
     return NextResponse.redirect(new URL('/login', request.url));

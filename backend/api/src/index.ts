@@ -17,8 +17,13 @@ import { adminWalletRouter } from './routes/admin/wallet';
 import { adminOrdersRouter } from './routes/admin/orders';
 import { adminMetricsRouter } from './routes/admin/metrics';
 import { webhooksRouter } from './routes/webhooks';
+import { vendorRouter } from './routes/vendor';
+
 const app = express();
 const port = process.env.PORT || 4000;
+
+// Serve local uploads as a fallback for Azure Storage in development
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
 app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:3000',
@@ -43,6 +48,7 @@ app.use('/api/orgs/:orgId/wallet', walletRouter);
 app.use('/api/admin/wallet', adminWalletRouter);
 app.use('/api/webhooks', webhooksRouter);
 app.use('/api/recipient', recipientRouter);
+app.use('/api/vendor', vendorRouter);
 
 app.listen(port, () => {
   console.log(`API server listening on port ${port}`);

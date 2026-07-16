@@ -211,27 +211,44 @@ recipientRouter.post('/:token/redeem', async (req, res) => {
 
       if (!wallet) throw new Error('Organization wallet not found');
 
-      // Calculate the original held amount for this recipient
+      // Find the variant snapshot
+      let snapshotBase = variant.priceCents;
+      let snapshotFound = false;
+      
+      const campaignProducts = await tx.campaignProduct.findMany({
+        where: { campaignId: recipient.campaign.id },
+        include: { product: { include: { variants: true } } }
+      });
+
+      for (const cp of campaignProducts) {
+        const snaps = cp.variantSnapshots as Record<string, any>;
+        if (snaps && snaps[data.variantId]) {
+          snapshotBase = snaps[data.variantId].priceCents;
+          snapshotFound = true;
+          break;
+        }
+      }
+
       let heldPerRecipient = 0;
       if (recipient.campaign.mode === 'CHOICE') {
         heldPerRecipient = recipient.campaign.budgetCentsPerRecipient || 0;
       } else {
-        // SINGLE mode: we need to find the max variant price. 
-        // This is tricky inside the tx without re-fetching all campaign products.
-        // For Epic F, we will assume it's stored or we recalculate.
-        const campaignProducts = await tx.campaignProduct.findMany({
-          where: { campaignId: recipient.campaign.id },
-          include: { product: { include: { variants: true } } }
-        });
-        const variants = campaignProducts[0]?.product.variants || [];
-        heldPerRecipient = Math.max(0, ...variants.map(v => v.priceCents));
+        if (campaignProducts.length > 0) {
+          const snaps = campaignProducts[0].variantSnapshots as Record<string, any>;
+          if (snaps) {
+            heldPerRecipient = Math.max(0, ...Object.values(snaps).map((v: any) => v.priceCents));
+          } else {
+            const variants = campaignProducts[0]?.product.variants || [];
+            heldPerRecipient = Math.max(0, ...variants.map(v => v.priceCents));
+          }
+        }
       }
 
       const heldBase = heldPerRecipient;
       const heldFee = Math.floor((heldBase * recipient.campaign.serviceFeeBps) / 10000);
       const totalHeldAmount = BigInt(heldBase + heldFee);
 
-      const actualBase = variant.priceCents;
+      const actualBase = snapshotBase;
       const actualFee = Math.floor((actualBase * recipient.campaign.serviceFeeBps) / 10000);
       const actualChargeAmount = BigInt(actualBase + actualFee);
 
@@ -289,7 +306,7 @@ recipientRouter.post('/:token/redeem', async (req, res) => {
           campaignId: recipient.campaign.id,
           recipientId: recipient.id,
           variantId: variant.id,
-          priceCents: variant.priceCents,
+          priceCents: actualBase,
           status: 'PENDING',
           idempotencyKey: `redeem_${recipient.id}`
         }

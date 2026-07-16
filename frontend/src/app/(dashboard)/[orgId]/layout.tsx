@@ -12,10 +12,15 @@ export default async function DashboardLayout({
   children: React.ReactNode;
   params: Promise<{ orgId: string }>;
 }) {
+  const { orgId } = await params;
+  
+  // Guard against Next.js dynamic route caching bugs catching /vendor
+  if (orgId === 'vendor') {
+    redirect('/vendor/catalog');
+  }
+
   const session = await auth();
   if (!session) redirect('/login');
-
-  const { orgId } = await params;
 
   return (
     <div className="flex h-screen bg-stone-50 text-stone-900 font-sans">

@@ -31,3 +31,20 @@ export type RecipientRow = z.infer<typeof recipientRowSchema>;
 
 export const addSingleRecipientSchema = recipientRowSchema;
 export type AddSingleRecipientInput = z.infer<typeof addSingleRecipientSchema>;
+
+export const variantSnapshotSchema = z.object({
+  variantId: z.string(),
+  sku: z.string(),
+  title: z.string(),
+  priceCents: z.number(),
+  hsnCode: z.string().nullable().optional(),
+  gstRateBps: z.number(),
+  isDigital: z.boolean(),
+});
+export type VariantSnapshot = z.infer<typeof variantSnapshotSchema>;
+
+export const campaignProductSnapshotsSchema = z.record(
+  z.string(), // variantId
+  variantSnapshotSchema
+);
+export type CampaignProductSnapshots = z.infer<typeof campaignProductSnapshotsSchema>;

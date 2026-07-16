@@ -60,6 +60,31 @@ async function main() {
   });
   console.log(`✓ Vendors: ${hamperVendor.name}, ${voucherVendor.name}`);
 
+  // ─── HSN Codes ───────────────────────────────────────────────────────────
+  const hsnCodes = [
+    { code: '21069099', description: 'Food preparations (Sweets, Hampers)', defaultGstRateBps: 1800 },
+    { code: '19059090', description: 'Bakery products (Snacks)', defaultGstRateBps: 1200 },
+    { code: '96081000', description: 'Ball-point pens', defaultGstRateBps: 1200 },
+    { code: '48201090', description: 'Notebooks and journals', defaultGstRateBps: 1200 },
+    { code: '33049910', description: 'Beauty or make-up preparations', defaultGstRateBps: 1800 },
+    { code: '09021090', description: 'Tea, green or black', defaultGstRateBps: 500 },
+    { code: '74199990', description: 'Articles of copper', defaultGstRateBps: 1800 },
+    { code: '42022900', description: 'Handbags and totes', defaultGstRateBps: 1200 },
+    { code: '69120090', description: 'Ceramic tableware and pots', defaultGstRateBps: 1200 },
+    { code: '85176990', description: 'Electrical apparatus', defaultGstRateBps: 1800 },
+    { code: '49070090', description: 'Gift cards and vouchers', defaultGstRateBps: 1800 },
+  ];
+
+  for (const hsn of hsnCodes) {
+    await prisma.hsnCode.upsert({
+      where: { code: hsn.code },
+      update: {},
+      create: hsn,
+    });
+  }
+  console.log(`✓ Seeded ${hsnCodes.length} HSN Codes`);
+
+
   // ─── Products ─────────────────────────────────────────────────────────────
   type ProductSeed = {
     id: string;

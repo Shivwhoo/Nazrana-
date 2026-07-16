@@ -12,6 +12,7 @@ export class CatalogService {
     const products = await prisma.product.findMany({
       where: {
         status: 'ACTIVE',
+        moderationStatus: 'PUBLISHED',
         ...(search ? {
           OR: [
             { title: { contains: search, mode: 'insensitive' } },

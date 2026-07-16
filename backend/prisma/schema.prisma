@@ -14,6 +14,25 @@ enum Role {
   FINANCE
 }
 
+enum VendorUserStatus {
+  INVITED
+  ACTIVE
+  DISABLED
+}
+
+enum VendorOnboardingStatus {
+  SHELL_CREATED
+  INVITED
+  ACTIVE
+  SUSPENDED
+}
+
+enum ModerationStatus {
+  DRAFT
+  PUBLISHED
+  SUSPENDED
+}
+
 enum VendorFulfillmentType {
   EMAIL
   API
@@ -100,15 +119,15 @@ enum NotificationStatus {
 }
 
 model Organization {
-  id               String            @id @default(uuid())
+  id               String   @id @default(uuid())
   name             String
   gstin            String
   stateCode        String
-  settings         Json              @default("{}")
-  brandingDefaults Json              @default("{}")
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
-  
+  settings         Json     @default("{}")
+  brandingDefaults Json     @default("{}")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
   users            Membership[]
   campaigns        Campaign[]
   orders           Order[]
@@ -121,14 +140,14 @@ model Organization {
 }
 
 model User {
-  id              String       @id @default(uuid())
-  email           String       @unique
+  id              String   @id @default(uuid())
+  email           String   @unique
   password        String?
   name            String?
-  isPlatformAdmin Boolean      @default(false)
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
-  
+  isPlatformAdmin Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
   memberships Membership[]
   campaigns   Campaign[]
 }
@@ -138,7 +157,7 @@ model Membership {
   role              Role
   organizationId    String
   userId            String
-  inviteToken       String?   @unique  // SHA-256 hashed token for invite accept links
+  inviteToken       String?   @unique // SHA-256 hashed token for invite accept links
   inviteTokenExpiry DateTime?
   acceptedAt        DateTime?
   createdAt         DateTime  @default(now())
@@ -151,52 +170,90 @@ model Membership {
 }
 
 model Vendor {
-  id                  String                @id @default(uuid())
+  id                  String                 @id @default(uuid())
   name                String
   contact             String
   fulfillmentType     VendorFulfillmentType
-  serviceablePincodes Json?                 // Array of strings or regions
-  cutoffDates         Json?                 // E.g., { "Diwali": "2026-11-01" }
+  serviceablePincodes Json? // Array of strings or regions
+  cutoffDates         Json? // E.g., { "Diwali": "2026-11-01" }
   payoutDetails       Json?
-  status              VendorStatus          @default(ACTIVE)
-  createdAt           DateTime              @default(now())
-  updatedAt           DateTime              @updatedAt
+  status              VendorStatus           @default(ACTIVE)
+  onboardingStatus    VendorOnboardingStatus @default(SHELL_CREATED)
+  defaultMarkupBps    Int?
+  createdAt           DateTime               @default(now())
+  updatedAt           DateTime               @updatedAt
 
-  products Product[]
+  products    Product[]
+  vendorUsers VendorUser[]
+}
+
+model VendorUser {
+  id                String           @id @default(cuid())
+  vendorId          String
+  vendor            Vendor           @relation(fields: [vendorId], references: [id])
+  email             String
+  passwordHash      String
+  status            VendorUserStatus @default(INVITED) // INVITED | ACTIVE | DISABLED
+  mustResetPassword Boolean          @default(true)
+  lastLoginAt       DateTime?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@unique([vendorId, email])
+}
+
+model VendorInvite {
+  id        String    @id @default(cuid())
+  vendorId  String
+  email     String
+  tokenHash String    @unique // SHA-256
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+}
+
+model HsnCode {
+  code              String @id
+  description       String
+  defaultGstRateBps Int
 }
 
 model Product {
-  id          String        @id @default(uuid())
-  vendorId    String
-  title       String
-  description String
-  whatsInside String?       // Rich text
-  images      String[]      // URLs
-  category    String?
-  attributes  Json?
-  status      ProductStatus @default(DRAFT)
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  id                    String           @id @default(uuid())
+  vendorId              String
+  title                 String
+  description           String
+  whatsInside           String? // Rich text
+  images                Json             @default("[]") // JSON array of { url, width, height, uploadedAt }
+  category              String?
+  attributes            Json?
+  status                ProductStatus    @default(DRAFT)
+  createdByVendorUserId String?
+  moderationStatus      ModerationStatus @default(PUBLISHED)
+  validationErrors      Json?
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
 
-  vendor     Vendor           @relation(fields: [vendorId], references: [id])
-  variants   Variant[]
-  campaigns  CampaignProduct[]
+  vendor      Vendor            @relation(fields: [vendorId], references: [id])
+  variants    Variant[]
+  campaigns   CampaignProduct[]
   collections CollectionItem[]
 }
 
 model Variant {
-  id          String   @id @default(uuid())
-  productId   String
-  sku         String   @unique
-  title       String
-  priceCents  Int
-  costCents   Int
-  hsnCode     String?
-  gstRateBps  Int      // Basis points (e.g., 1800 for 18%)
-  isDigital   Boolean  @default(false)
-  stockQty    Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id                          String   @id @default(uuid())
+  productId                   String
+  sku                         String   @unique
+  title                       String
+  priceCents                  Int
+  costCents                   Int
+  hsnCode                     String?
+  gstRateBps                  Int // Basis points (e.g., 1800 for 18%)
+  isDigital                   Boolean  @default(false)
+  stockQty                    Int      @default(0)
+  priceCentsOverriddenByAdmin Boolean  @default(false)
+  createdAt                   DateTime @default(now())
+  updatedAt                   DateTime @updatedAt
 
   product    Product     @relation(fields: [productId], references: [id])
   orders     Order[]
@@ -204,20 +261,20 @@ model Variant {
 }
 
 model Collection {
-  id          String           @id @default(uuid())
+  id          String   @id @default(uuid())
   name        String
   description String?
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   items CollectionItem[]
 }
 
 model CollectionItem {
-  id           String     @id @default(uuid())
+  id           String   @id @default(uuid())
   collectionId String
   productId    String
-  createdAt    DateTime   @default(now())
+  createdAt    DateTime @default(now())
 
   collection Collection @relation(fields: [collectionId], references: [id])
   product    Product    @relation(fields: [productId], references: [id])
@@ -226,33 +283,34 @@ model CollectionItem {
 }
 
 model Campaign {
-  id                     String         @id @default(uuid())
-  organizationId         String
-  createdById            String
-  name                   String
-  mode                   CampaignMode
-  budgetCentsPerRecipient Int?          // Null if SINGLE
-  messageTemplate        String
-  branding               Json           @default("{}") // logo, accentColor
-  status                 CampaignStatus @default(DRAFT)
-  expiresAt              DateTime
-  serviceFeeBps          Int            @default(500) // 5%
-  createdAt              DateTime       @default(now())
-  updatedAt              DateTime       @updatedAt
+  id                      String         @id @default(uuid())
+  organizationId          String
+  createdById             String
+  name                    String
+  mode                    CampaignMode
+  budgetCentsPerRecipient Int? // Null if SINGLE
+  messageTemplate         String
+  branding                Json           @default("{}") // logo, accentColor
+  status                  CampaignStatus @default(DRAFT)
+  expiresAt               DateTime
+  serviceFeeBps           Int            @default(500) // 5%
+  createdAt               DateTime       @default(now())
+  updatedAt               DateTime       @updatedAt
 
-  organization Organization      @relation(fields: [organizationId], references: [id])
-  createdBy    User              @relation(fields: [createdById], references: [id])
-  products     CampaignProduct[]
-  recipients   Recipient[]
-  orders       Order[]
+  organization     Organization      @relation(fields: [organizationId], references: [id])
+  createdBy        User              @relation(fields: [createdById], references: [id])
+  products         CampaignProduct[]
+  recipients       Recipient[]
+  orders           Order[]
   recipientImports RecipientImport[]
 }
 
 model CampaignProduct {
-  id         String   @id @default(uuid())
-  campaignId String
-  productId  String
-  createdAt  DateTime @default(now())
+  id               String   @id @default(uuid())
+  campaignId       String
+  productId        String
+  variantSnapshots Json? // { variantId: { sku, title, priceCents, hsnCode, gstRateBps, isDigital } }
+  createdAt        DateTime @default(now())
 
   campaign Campaign @relation(fields: [campaignId], references: [id])
   product  Product  @relation(fields: [productId], references: [id])
@@ -268,7 +326,7 @@ model Recipient {
   phone             String?
   tokenHash         String          @unique
   status            RecipientStatus @default(INVITED)
-  address           String?         // Encrypted at rest
+  address           String? // Encrypted at rest
   redeemedVariantId String?
   redeemedAt        DateTime?
   reminderCount     Int             @default(0)
@@ -279,7 +337,7 @@ model Recipient {
   campaign        Campaign @relation(fields: [campaignId], references: [id])
   redeemedVariant Variant? @relation(fields: [redeemedVariantId], references: [id])
   order           Order?
-  
+
   @@unique([campaignId, email])
   @@index([campaignId, status])
 }
@@ -291,7 +349,7 @@ model RecipientImport {
   status         ImportStatus @default(PENDING)
   totalRows      Int          @default(0)
   processedRows  Int          @default(0)
-  errorReport    Json?        // e.g. [{ row: 2, error: "Invalid email" }]
+  errorReport    Json? // e.g. [{ row: 2, error: "Invalid email" }]
   rawContent     String?      @db.Text
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
@@ -299,7 +357,6 @@ model RecipientImport {
   organization Organization @relation(fields: [organizationId], references: [id])
   campaign     Campaign     @relation(fields: [campaignId], references: [id])
 }
-
 
 model Order {
   id             String      @id @default(uuid())
@@ -320,7 +377,7 @@ model Order {
   recipient    Recipient    @relation(fields: [recipientId], references: [id])
   variant      Variant      @relation(fields: [variantId], references: [id])
   shipment     Shipment?
-  
+
   @@index([organizationId, status, createdAt])
 }
 
@@ -356,9 +413,9 @@ model Wallet {
 model WalletLedger {
   id                String          @id @default(uuid())
   walletId          String
-  amountCents       BigInt          // Signed
+  amountCents       BigInt // Signed
   type              LedgerEntryType
-  referenceType     String?         // e.g., 'ORDER', 'CAMPAIGN', 'PAYMENT'
+  referenceType     String? // e.g., 'ORDER', 'CAMPAIGN', 'PAYMENT'
   referenceId       String?
   balanceAfterCents BigInt
   heldAfterCents    BigInt
@@ -370,14 +427,14 @@ model WalletLedger {
 }
 
 model Payment {
-  id               String          @id @default(uuid())
-  organizationId   String
-  provider         PaymentProvider
-  providerRef      String?
-  amountCents      BigInt
-  status           PaymentStatus   @default(PENDING)
-  createdAt        DateTime        @default(now())
-  updatedAt        DateTime        @updatedAt
+  id             String          @id @default(uuid())
+  organizationId String
+  provider       PaymentProvider
+  providerRef    String?
+  amountCents    BigInt
+  status         PaymentStatus   @default(PENDING)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
 
   organization Organization @relation(fields: [organizationId], references: [id])
 }
@@ -406,7 +463,7 @@ model Invoice {
   number         String   @unique
   organizationId String
   pdfUrl         String?
-  gstBreakdown   Json     // per-line HSN, taxable value, CGST/SGST/IGST
+  gstBreakdown   Json // per-line HSN, taxable value, CGST/SGST/IGST
   totals         Json
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
@@ -417,7 +474,7 @@ model Invoice {
 model AuditLog {
   id             String   @id @default(uuid())
   organizationId String
-  actorId        String   // userId or 'SYSTEM'
+  actorId        String // userId or 'SYSTEM'
   action         String
   targetType     String
   targetId       String
@@ -425,13 +482,13 @@ model AuditLog {
   createdAt      DateTime @default(now())
 
   organization Organization @relation(fields: [organizationId], references: [id])
-  
+
   @@index([organizationId, createdAt])
 }
 
 model NotificationLog {
   id            String              @id @default(uuid())
-  recipientType String              // e.g., 'USER', 'RECIPIENT'
+  recipientType String // e.g., 'USER', 'RECIPIENT'
   recipientId   String?
   channel       NotificationChannel
   template      String

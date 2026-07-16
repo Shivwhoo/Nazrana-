@@ -83,11 +83,30 @@ export class ActivationService {
         }
       });
 
-      // 6. Update Campaign Status
+      // 6. Update Campaign Status and Snapshot prices
       const updatedCampaign = await tx.campaign.update({
         where: { id: campaign.id },
         data: { status: 'ACTIVE' }
       });
+
+      for (const cp of campaign.products) {
+        const snapshots: Record<string, any> = {};
+        for (const v of cp.product.variants) {
+          snapshots[v.id] = {
+            variantId: v.id,
+            sku: v.sku,
+            title: v.title,
+            priceCents: v.priceCents,
+            hsnCode: v.hsnCode,
+            gstRateBps: v.gstRateBps,
+            isDigital: v.isDigital
+          };
+        }
+        await tx.campaignProduct.update({
+          where: { id: cp.id },
+          data: { variantSnapshots: snapshots }
+        });
+      }
 
       // 7. Audit Log
       await tx.auditLog.create({

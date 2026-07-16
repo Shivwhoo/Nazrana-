@@ -24,6 +24,10 @@ export const authMiddleware = (req: AuthRequest, res: Response, next: NextFuncti
     // Assuming we configure NextAuth to use raw JWT with `jsonwebtoken`, we can verify it here.
     const decoded = jwt.verify(token, secret) as any;
     
+    if (decoded.aud === 'vendor') {
+      return res.status(401).json({ error: 'Invalid token audience for this route' });
+    }
+
     req.user = {
       id: decoded.sub || decoded.id,
       email: decoded.email,

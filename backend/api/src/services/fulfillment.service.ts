@@ -47,7 +47,7 @@ export class FulfillmentService {
 
     try {
       // 3. Dispatch to provider
-      const provider = getFulfillmentProvider(vendor.fulfillmentType as 'EMAIL' | 'API' | 'DIGITAL');
+      const provider = getFulfillmentProvider(vendor.fulfillmentType as 'EMAIL' | 'API' | 'DIGITAL' | 'PORTAL');
       const result = await provider.createOrder(order.id);
 
       if (result.success) {
