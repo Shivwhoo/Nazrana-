@@ -4,7 +4,7 @@
     text { font-family: 'Fraunces', serif; }
   </style>
   <g transform="rotate(-7 38 38)">
-    <circle cx="38" cy="38" r="34" fill="#221C14"/>
-    <text x="38" y="49" text-anchor="middle" font-weight="600" font-size="34" fill="#FAF6EE">n</text>
+    <circle cx="38" cy="38" r="38" fill="#221C14"/>
+    <text x="38" y="52" text-anchor="middle" font-weight="600" font-size="42" fill="#FAF6EE">n</text>
   </g>
 </svg>
