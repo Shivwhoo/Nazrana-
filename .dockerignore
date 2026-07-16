@@ -1,0 +1,14 @@
+.git
+.gitignore
+.dockerignore
+node_modules
+npm-debug.log
+Dockerfile
+docker-compose.yml
+.next
+.turbo
+dist
+build
+README.md
+.env
+.env.*

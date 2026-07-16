@@ -1,0 +1,17 @@
+{
+  "name": "corporate-gifting-monorepo",
+  "private": true,
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "db:generate": "pnpm --filter \"@gifting/prisma\" generate",
+    "db:migrate": "pnpm --filter \"@gifting/prisma\" migrate"
+  },
+  "devDependencies": {
+    "dotenv-cli": "^11.0.0",
+    "turbo": "^2.0.0",
+    "typescript": "^5.5.0"
+  },
+  "packageManager": "pnpm@9.5.0"
+}

@@ -1,0 +1,182 @@
+# AGENT PROMPT v2 — Corporate Gifting Platform (full detail, story-driven spec)
+
+Copy everything below this line into your coding agent.
+
+---
+
+You are building the **MVP of a B2B corporate gifting web application for the Indian market**. HR teams at companies (50–5,000 employees) use it to send gifts at scale — Diwali hampers, onboarding kits, anniversaries — **without collecting recipient addresses**: each recipient gets a secure personal link and enters their own address. The reference user journey (build exactly this): an HR manager signs up, invites a finance colleague, builds a "recipients choose within ₹1,500" campaign for 399 employees from a CSV of just names and emails, funds a prepaid wallet, activates, recipients redeem on their phones with no login, physical orders route to vendors and vouchers issue instantly, exceptions surface to an ops console, unspent money returns to the wallet, and a GST-compliant invoice is generated at the end.
+
+Work autonomously, but stop and ask me before making irreversible product decisions not covered here.
+
+---
+
+## 1. Tech stack (fixed — do not substitute)
+
+- **Frontend:** Next.js (App Router) + TypeScript + Tailwind CSS + shadcn/ui + TanStack Query
+- **Backend:** separate **Node.js + TypeScript API service** (Express with a clean modular structure; keep it framework-light). Do NOT put business logic in Next.js API routes/server actions.
+- **Database:** PostgreSQL + **Prisma** (schema + migrations checked in)
+- **Cache/queue:** Redis + **BullMQ** for ALL async work (emails, CSV parsing, fulfillment, reminders, PDF generation)
+- **Auth:** **Auth.js** (self-hosted) — email/password + Google OAuth. The separate Express API verifies the Auth.js JWT in middleware.
+- **Payments:** **Razorpay** (orders API + signature-verified webhooks). Money is ALWAYS integer paise + currency code. Never floats.
+- **Validation:** Zod schemas in a shared package, used by BOTH web and API.
+- **Deployment target:** three plain `node` processes — `web`, `api`, `worker`. 12-factor (env-var config, stateless API), container-ready, but do NOT add Docker/Kubernetes — I'll do that later.
+
+## 2. Monorepo layout (pnpm workspaces + Turborepo)
+
+```
+/apps/web        → Next.js: sender portal + public recipient pages (/r/[token]) + internal ops console
+/apps/api        → Express + TS, modular: auth, orgs, catalog, campaigns, orders, payments,
+                   fulfillment, notifications, invoices, admin
+/apps/worker     → BullMQ processors (imports shared services from packages)
+/packages/db     → Prisma schema + client
+/packages/shared → Zod schemas, types, enums, constants (single source of truth)
+/packages/emails → React Email templates
+```
+
+## 3. Data model (Prisma; money = integer paise; every business table carries orgId)
+
+- `Organization` — name, **gstin**, state code (needed for CGST/SGST vs IGST), settings JSON, branding defaults
+- `User`, `Membership` — role enum **OWNER | ADMIN | MEMBER | FINANCE**, unique (orgId, userId)
+- `Vendor` — name, contact, fulfillmentType **EMAIL | API | DIGITAL**, `serviceablePincodes`/regions, **cutoffDates JSON** (e.g., "order by Nov 1 for pre-Diwali delivery"), payout details JSON, status
+- `Product` — vendorId, title, description, "what's inside" rich text, images[], category, attributes JSON, status; `Variant` — sku, title, **priceCents, costCents**, hsnCode, gstRateBps, isDigital bool, stockQty; `Collection` + `CollectionItem` (e.g., "Diwali 2026")
+- `Campaign` — orgId, createdById, name, mode **SINGLE | CHOICE**, budgetCentsPerRecipient (CHOICE), messageTemplate (supports `{{firstName}}`), branding JSON (logo, accentColor), status **DRAFT | ACTIVE | COMPLETED | CANCELLED**, expiresAt, serviceFeeBps
+- `CampaignProduct` — the single SKU or the choice pool
+- `Recipient` — campaignId, name, email, phone?, **tokenHash UNIQUE**, status **INVITED | VIEWED | REDEEMED | OPTED_OUT | BOUNCED | REMOVED**, address JSON (recipient-entered; encrypted at rest), redeemedVariantId, redeemedAt, reminderCount, optOutAt
+- `Order` — orgId, campaignId, **recipientId UNIQUE** (one order per recipient — DB constraint), variantId, priceCents, status **PENDING | CONFIRMED | SENT_TO_VENDOR | SHIPPED | DELIVERED | EXCEPTION | CANCELLED**, vendorOrderRef, **idempotencyKey UNIQUE**, exceptionNote
+- `Shipment` — orderId, carrier, trackingNumber, trackingUrl, events JSON, deliveredAt
+- `Wallet` — orgId UNIQUE, balanceCents, **heldCents**; `WalletLedger` — **append-only**: signed amountCents, type **TOPUP | HOLD | HOLD_RELEASE | CHARGE | REFUND | ADJUSTMENT**, referenceType/referenceId, **balanceAfterCents**, createdAt. Never UPDATE/DELETE ledger rows. All wallet mutations in a transaction with `SELECT ... FOR UPDATE` on the wallet row.
+- `Payment` — orgId, provider RAZORPAY | BANK_TRANSFER, providerRef, amountCents, status, processedEventIds for idempotency
+- `ProformaInvoice` + `Invoice` — number (sequential per org prefix), pdfUrl, GST breakdown JSON (per-line HSN, taxable value, CGST/SGST/IGST), totals
+- `AuditLog` — orgId, actorId (user or SYSTEM), action, targetType/targetId, metadata JSON — written on every privileged action AND every order/campaign/recipient status transition
+- `NotificationLog` — recipientType, channel EMAIL, template, status SENT | BOUNCED | FAILED, providerRef
+
+## 4. Features as user stories (build in this order; each has acceptance criteria)
+
+### Epic A — Identity & organization
+
+**A1. Sign up & create org.** As a new user I sign up with Google or email/password, then create my organization with name + GSTIN + state.
+✓ GSTIN format validated (15-char pattern) · state selection drives tax split later · lands on an empty dashboard with a "Send your first gift" CTA.
+
+**A2. Invite team with roles.** As an Owner I invite colleagues by email with a role.
+✓ FINANCE can view spend, top up wallet, download invoices — cannot create/edit campaigns · MEMBER can build campaigns — cannot access billing/org settings · ADMIN = member + team/settings · role checks enforced in API middleware (not just hidden UI) · invite emails with accept links · every invite/role-change audit-logged.
+
+### Epic B — Catalog
+
+**B1. Org-facing catalog.** As an HR manager I browse a curated catalog with search, category filter, and price-band filter (e.g., ≤ ₹1,500); I can open a product page with photos, description, what's-inside, and a delivery note showing pan-India coverage and the vendor's **order-by cutoff date**.
+✓ Collections (e.g., "Diwali 2026") browsable · digital voucher products clearly badged · out-of-stock variants not selectable.
+
+**B2. Internal catalog CMS.** As a PLATFORM_ADMIN (separate flag, not an org role) I CRUD vendors, products, variants, collections; set serviceable pincodes/regions and cutoff dates per vendor.
+✓ Lives in the ops console area, inaccessible to org users · seed script creates 2 vendors (one EMAIL hamper vendor, one DIGITAL voucher vendor) + ~30 realistic SKUs + a "Diwali 2026" collection.
+
+### Epic C — Campaign builder (wizard)
+
+**C1. Mode switch.** Step 1: choose **"Everyone gets this"** (SINGLE — pick exactly one product) or **"They choose"** (CHOICE — set ₹/head budget, then pick a pool of products whose price ≤ budget; warn if pool has no voucher fallback option).
+
+**C2. Message & branding.** Step 2: write a message with `{{firstName}}` personalization (live preview), upload org logo, pick an accent color. Branding persists as org default for the next campaign.
+
+**C3. Recipient CSV import — address-less.** Step 3: upload CSV with name, email, phone(optional). **No address column exists.**
+✓ Parsed in a WORKER, streamed, never in the request thread · row-level errors (malformed email, missing name) reported with row numbers, fixable inline · dedupe by email within campaign · UI polls a job-status endpoint with progress · manual single-recipient add also available · cap 10,000 rows.
+
+**C4. Review & cost estimate.** Step 4: shows recipient count × max cost per head (SINGLE: variant price; CHOICE: budget) + service fee (campaign.serviceFeeBps, default from env) = **estimated maximum cost**, alongside current wallet balance. Activate is disabled if wallet balance < estimate, with a top-up CTA.
+
+### Epic D — Wallet & payments
+
+**D1. Razorpay top-up.** As Finance I top up via Razorpay checkout (UPI/card/netbanking).
+✓ Server creates Razorpay order · webhook verifies signature, is idempotent (processed event IDs stored), appends a TOPUP ledger entry · UI reflects new balance.
+
+**D2. Bank-transfer top-up.** As Finance, for large amounts I click "Pay by bank transfer": the platform generates a **proforma invoice PDF** with amount + bank details; a PLATFORM_ADMIN later marks the transfer received, which credits the wallet.
+✓ Proforma numbered and stored · manual credit is audit-logged with actor.
+
+**D3. Ledger integrity.** Balance and heldCents are derivable from the ledger; a nightly worker job recomputes and alerts on drift. Finance can export the ledger as CSV.
+
+### Epic E — Activation (the money path)
+
+**E1. Atomic activation.** Clicking Activate runs ONE transaction: validate (≥1 recipient, products priced/active, wallet sufficient) → append HOLD ledger entry for the estimated max, increment wallet.heldCents → campaign status ACTIVE.
+✓ Insufficient funds = clean error, nothing partial · double-click safe (idempotent).
+
+**E2. Batched invite fan-out.** On activation, enqueue invite emails in batches of 500 with staggered delays (protect sender reputation).
+✓ Each email contains the recipient's unique link `https://<domain>/r/<token>` · token = 128-bit random, stored **hashed** (SHA-256), single-use, expires at campaign.expiresAt · invite send logged in NotificationLog.
+
+### Epic F — Recipient experience (public, no login, mobile-first)
+
+**F1. Redemption page.** As a recipient I open `/r/[token]` on my phone: I see the sender org's logo/color, the personalized message, and either the single gift or the choice grid. SSR, minimal JS bundle, fast on mid-range Android.
+✓ First valid open flips status INVITED → VIEWED · invalid/expired/used tokens get a constant-time generic "link not available" page (no enumeration) · per-IP rate limiting on all /r/* routes.
+
+**F2. Choose & address.** I pick a variant (size/option selector where the product has variants), enter name-confirmed shipping address with **6-digit pincode validation**, and see a serviceability check against the vendor's serviceable pincodes BEFORE confirming.
+✓ On confirm, one transaction: recipient → REDEEMED with address + variant; Order created PENDING (idempotent on recipientId); HOLD_RELEASE for (budget − actual price) and CHARGE for actual price appended to ledger · a second submit attempt cannot create a second order.
+
+**F3. Serviceability fallback.** If my pincode isn't serviceable, I'm NOT dead-ended: the page offers the digital voucher option at the same value instead.
+✓ Voucher redemption follows the same order flow with the digital variant.
+
+**F4. Opt-out.** I can click "No thanks" — status OPTED_OUT, full HOLD_RELEASE back to the wallet, a kind confirmation screen. One click, no guilt-tripping.
+
+**F5. Tracking page.** After my gift ships I can revisit my link to see status and tracking number/URL.
+
+### Epic G — Notifications (worker-driven)
+
+**G1. Reminders.** Recipients still INVITED/VIEWED get automated reminder emails — spaced (e.g., day 4 and day 8 via BullMQ delayed jobs), **hard cap 3**, stop immediately on redemption/opt-out.
+
+**G2. Bounce handling.** Email provider bounce webhooks flip recipient → BOUNCED, flagged in the sender dashboard. Sender can fix the email (re-invites) or REMOVE the recipient (full HOLD_RELEASE to wallet).
+
+**G3. Transactional set.** Invite · reminder · redemption confirmation (to recipient) · shipped-with-tracking (to recipient) · weekly campaign digest (to campaign creator) · wallet top-up receipt (to Finance). All behind an `EmailProvider` interface: SES/Resend implementation + console/log implementation for dev. Never log PII or tokens.
+
+### Epic H — Fulfillment
+
+**H1. Provider abstraction.**
+```ts
+interface FulfillmentProvider {
+  quote(items, address): Promise<Quote>;           // cost + ETA + serviceability
+  createOrder(order): Promise<{ vendorRef: string }>;
+  cancel(vendorRef): Promise<void>;
+}
+```
+Implementations now: **EmailVendorProvider** (templated purchase-order email to the vendor with recipient address + packing note; order → SENT_TO_VENDOR) and **StubDigitalProvider** (marks digital orders DELIVERED immediately, records a placeholder code — real voucher API comes later). Every order flows through this interface.
+
+**H2. Fulfillment worker.** Consumes `orders.fulfill` queue: PENDING → CONFIRMED → provider call. Retries with exponential backoff (max 5); terminal failure → status EXCEPTION with exceptionNote, surfaced to ops.
+
+**H3. Order state machine.** Transitions allowed ONLY per the map: PENDING→CONFIRMED→SENT_TO_VENDOR→SHIPPED→DELIVERED, plus →EXCEPTION from any active state, EXCEPTION→CONFIRMED (retry/resolve), →CANCELLED only from PENDING/CONFIRMED/EXCEPTION. Illegal jumps rejected at the service layer. Every transition audit-logged with actor.
+
+### Epic I — Ops console (internal, PLATFORM_ADMIN)
+
+**I1. Order board.** All orders across orgs, filterable by status/campaign/vendor; **EXCEPTION queue front and center** (red badge count).
+✓ Manual actions: advance status with tracking-number entry (CONFIRMED→SHIPPED→DELIVERED), retry fulfillment, substitute variant (with note), cancel with automatic REFUND ledger entry.
+
+**I2. No silent failures.** Any order in EXCEPTION > 24h and any BullMQ job in the dead-letter state triggers an alert (email to ops + a visible banner in the console).
+
+### Epic J — Sender dashboard & reporting
+
+**J1. Live funnel.** Per campaign: **invited → viewed → redeemed → shipped → delivered** with counts and %, plus opted-out/bounced counts, actual spend vs held amount, and "returned to wallet" total.
+✓ Numbers derived from statuses, cached briefly (30s) · CHOICE campaigns show a per-product breakdown of picks.
+
+**J2. Exports.** Recipient-status CSV per campaign; ledger CSV for Finance.
+
+**J3. Campaign completion.** When all orders are terminal (DELIVERED/CANCELLED) or campaign expires: remaining holds released, status → COMPLETED, completion email to creator, invoice generation triggered.
+
+### Epic K — GST invoicing
+
+**K1. Tax invoice on completion.** Generated PDF: platform seller details, org buyer details + GSTIN, per-line items with **HSN code, taxable value, GST rate**, and **CGST+SGST when supplier and buyer state match, else IGST**, service fee as its own line (SAC code), grand totals, sequential invoice number.
+✓ Stored, downloadable by FINANCE/OWNER/ADMIN, emailed to Finance · math behind an `InvoiceService` with unit tests on the tax-split logic.
+
+## 5. Non-functional requirements
+
+- **Tenant isolation is the highest-severity concern**: every API query filters by authenticated orgId; write automated tests proving org A cannot read/mutate org B's campaigns, recipients, orders, wallet, or invoices.
+- All mutating endpoints accept and honor an `Idempotency-Key` header. Cursor pagination on lists. Error envelope `{code, message, details}`.
+- Rate limiting (Redis sliding window): strict per-IP on public /r/* routes; per-org elsewhere.
+- Shared Zod validation on every endpoint; sanitize recipient-provided strings before rendering anywhere.
+- Addresses and phones encrypted at rest (app-level AES-GCM); a scheduled job redacts recipient addresses 60 days after delivery.
+- Indexes: `orders(orgId, status, createdAt)`, `recipients(campaignId, status)`, unique on tokenHash, `walletLedger(walletId, createdAt)`.
+- Structured logging (pino) with request IDs; never log PII, tokens, or Razorpay secrets.
+- Tests: **Vitest unit tests near-100% on money code** (ledger math, hold/charge/release, tax split, state machine) · integration tests (Testcontainers: Postgres+Redis) for auth, org-scoping, activation, and redeem · one Playwright E2E: signup → build CHOICE campaign → activate → redeem via token → order created → funnel updates.
+- DX: seed script, `.env.example`, README with `pnpm dev` bringing up web+api+worker against local Postgres/Redis.
+
+## 6. Explicitly OUT of scope — do not build
+
+CRM/HRIS integrations · public API keys · approval workflows · multi-currency/i18n · WhatsApp/SMS (design NotificationChannel as extensible, ship email only) · swag/print-on-demand · real gift-card provider integration (stub only) · real shipping-aggregator integration (manual tracking entry only) · Docker/K8s manifests · mobile apps · vendor self-serve portal · analytics beyond the funnel described.
+
+## 7. Working style & milestones
+
+1. Scaffold monorepo + Prisma schema first — **show me the schema for approval before building features on it.**
+2. Then build epic by epic in the order above (A → K). After each epic: run the full test suite, then give me a one-paragraph status summary and a list of any decisions you made that I should review.
+3. Commit in small, logical increments with clear messages.
+4. Prefer boring, well-maintained, typed libraries when a choice is ambiguous.
+5. If anything in this spec conflicts internally, stop and ask rather than guessing.

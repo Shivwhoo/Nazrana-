@@ -1,0 +1,12 @@
+{
+  "name": "@gifting/core",
+  "version": "1.0.0",
+  "private": true,
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "echo 'No dev script in core'"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.0"
+  }
+}

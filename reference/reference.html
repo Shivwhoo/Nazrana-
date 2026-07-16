@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ledger &amp; Marigold — UI Direction</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Schibsted+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FAF6EE; --card:#FFFDF7; --ink:#221C14;
+    --ink60:rgba(34,28,20,.62); --ink40:rgba(34,28,20,.40); --ink12:rgba(34,28,20,.12); --ink06:rgba(34,28,20,.06);
+    --verm:#B23A1E; --verm-dark:#93301A; --mari:#D9A441; --mari-text:#A9721B; --green:#2E7D52;
+    --serif:'Fraunces',Georgia,serif; --sans:'Schibsted Grotesk',system-ui,sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--paper);color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased;line-height:1.5}
+  .tnum{font-variant-numeric:tabular-nums}
+  .wrap{max-width:1140px;margin:0 auto;padding:56px 32px 96px}
+
+  /* ---------- header ---------- */
+  .masthead{border-bottom:1px solid var(--ink);padding-bottom:28px;margin-bottom:12px}
+  .eyebrow{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink60);font-weight:600}
+  h1{font-family:var(--serif);font-weight:500;font-size:52px;line-height:1.05;margin-top:10px;letter-spacing:-.01em}
+  .masthead p{max-width:60ch;color:var(--ink60);margin-top:14px;font-size:15px}
+  .chips{display:flex;gap:0;margin-top:26px;border:1px solid var(--ink12);border-radius:6px;overflow:hidden;width:max-content}
+  .chip{width:92px;padding:34px 10px 8px;font-size:11px;letter-spacing:.03em;color:#fff}
+  .chip small{display:block;opacity:.85;font-size:10px}
+  .chip.paper{background:var(--paper);color:var(--ink)} .chip.ink{background:var(--ink)}
+  .chip.verm{background:var(--verm)} .chip.mari{background:var(--mari);color:var(--ink)} .chip.green{background:var(--green)}
+
+  .section-label{display:flex;align-items:baseline;gap:14px;margin:64px 0 22px}
+  .section-label .no{font-family:var(--serif);font-size:15px;color:var(--verm)}
+  .section-label h2{font-family:var(--serif);font-weight:500;font-size:26px}
+  .section-label .rule{flex:1;border-top:1px dotted var(--ink40);transform:translateY(-4px)}
+
+  .duo{display:grid;grid-template-columns:400px 1fr;gap:48px;align-items:start}
+  @media(max-width:900px){.duo{grid-template-columns:1fr}}
+
+  /* ---------- phone / recipient ---------- */
+  .phone{width:376px;border:1px solid var(--ink);border-radius:26px;background:var(--card);
+    box-shadow:0 24px 48px -24px rgba(34,28,20,.35);overflow:hidden}
+  .phone .statusbar{height:34px;display:flex;align-items:center;justify-content:center}
+  .phone .statusbar span{width:96px;height:5px;border-radius:3px;background:var(--ink12)}
+  .rp{padding:10px 24px 30px;position:relative}
+  /* corner ornament */
+  .ornament{position:absolute;top:6px;right:10px;opacity:.35}
+  .sender-row{display:flex;align-items:center;gap:10px}
+  .logo-dot{width:30px;height:30px;border-radius:6px;background:var(--ink);color:var(--paper);
+    display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px}
+  .sender-row .from{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink60);font-weight:600}
+  .sender-row .co{font-size:13px;font-weight:600;margin-top:1px}
+  .note{font-family:var(--serif);font-size:21px;line-height:1.35;font-weight:500;margin:22px 0 6px}
+  .note-sig{font-size:13px;color:var(--ink60);margin-bottom:20px}
+  .perf{border:none;border-top:1px dotted var(--ink40);margin:18px 0}
+  .pick-label{display:flex;justify-content:space-between;align-items:baseline;font-size:12px;letter-spacing:.1em;
+    text-transform:uppercase;font-weight:700;color:var(--ink60);margin-bottom:12px}
+  .pick-label b{color:var(--mari-text);letter-spacing:0;text-transform:none;font-size:12px}
+  .gifts{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  /* parcel-tag card */
+  .tag{position:relative;border:1px solid var(--ink12);border-radius:6px;background:var(--card);padding:10px;
+    clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,0 100%);cursor:pointer;transition:border-color .15s}
+  .tag:hover{border-color:var(--ink40)}
+  .tag .hole{position:absolute;top:7px;right:7px;width:7px;height:7px;border-radius:50%;
+    background:var(--paper);border:1px solid var(--ink12)}
+  .tag .art{height:64px;border-radius:4px;margin-bottom:8px;display:flex;align-items:center;justify-content:center}
+  .tag h4{font-size:12.5px;font-weight:600;line-height:1.25}
+  .tag .meta{font-size:10.5px;color:var(--ink60);margin-top:3px}
+  .tag.sel{border:1.5px solid var(--verm)}
+  .tag.sel .picked{position:absolute;left:8px;top:8px;background:var(--verm);color:#fff;font-size:9px;
+    font-weight:700;letter-spacing:.08em;padding:2px 6px;border-radius:3px;transform:rotate(-4deg)}
+  .cta{width:100%;margin-top:16px;background:var(--verm);border:none;color:#fff;font-family:var(--sans);
+    font-size:14.5px;font-weight:600;padding:14px;border-radius:6px;cursor:pointer;transition:background .15s}
+  .cta:hover{background:var(--verm-dark)}
+  .alt-links{display:flex;justify-content:space-between;margin-top:14px;font-size:12px}
+  .alt-links a{color:var(--ink60);text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--ink40)}
+  .phone-caption{font-size:12.5px;color:var(--ink60);margin-top:14px;max-width:376px}
+
+  /* ---------- dashboard ---------- */
+  .board{border:1px solid var(--ink12);border-radius:8px;background:var(--card);overflow:hidden}
+  .board-head{display:flex;justify-content:space-between;align-items:center;padding:18px 22px;border-bottom:1px solid var(--ink12)}
+  .serial{font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:11px;letter-spacing:.08em;color:var(--ink60)}
+  .board-head h3{font-family:var(--serif);font-weight:500;font-size:20px;margin-top:2px}
+  .stamp{font-size:11px;font-weight:700;letter-spacing:.14em;color:var(--verm);border:1.5px solid var(--verm);
+    padding:4px 10px;border-radius:4px;transform:rotate(-3deg);text-transform:uppercase}
+  .stamp.green{color:var(--green);border-color:var(--green)}
+  .board-body{padding:20px 22px}
+  .kpis{display:flex;gap:36px;margin-bottom:22px}
+  .kpi .v{font-family:var(--serif);font-size:30px;font-weight:500;letter-spacing:-.01em}
+  .kpi .v em{font-style:normal;font-size:15px;color:var(--ink60)}
+  .kpi .k{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink60);font-weight:600;margin-top:2px}
+  /* funnel */
+  .funnel{display:grid;gap:7px}
+  .frow{display:grid;grid-template-columns:78px 1fr 110px;gap:12px;align-items:center;font-size:12.5px}
+  .frow .stage{color:var(--ink60)}
+  .frow .barwrap{background:var(--ink06);border-radius:4px;height:18px;position:relative}
+  .frow .bar{position:absolute;inset:0 auto 0 0;background:var(--verm);border-radius:4px 3px 3px 4px;min-width:3px}
+  .frow:nth-child(n+4) .bar{background:var(--verm)}
+  .frow .num{text-align:right;color:var(--ink);font-weight:600}
+  .frow .num span{color:var(--ink60);font-weight:400}
+  .frow .barwrap:hover .bar{background:var(--verm-dark)}
+  /* ledger table */
+  .ledger{margin-top:26px}
+  .ledger-title{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px}
+  .ledger-title h4{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink60);font-weight:700}
+  .ledger-title .bal{font-family:var(--serif);font-size:17px}
+  table{width:100%;border-collapse:collapse;font-size:12.5px}
+  th{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink60);font-weight:600;
+    text-align:left;padding:7px 8px;border-bottom:1px solid var(--ink12)}
+  td{padding:8px;border-bottom:1px solid var(--ink06)}
+  td.r,th.r{text-align:right}
+  .amt-neg{color:var(--verm)} .amt-pos{color:var(--green)}
+  .rowchip{font-size:10px;font-weight:700;letter-spacing:.06em;padding:1.5px 6px;border-radius:3px;
+    border:1px solid var(--ink12);color:var(--ink60)}
+
+  /* ---------- principles ---------- */
+  .dd{display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--ink12);border-radius:8px;overflow:hidden}
+  @media(max-width:700px){.dd{grid-template-columns:1fr}}
+  .dd > div{padding:24px 28px;background:var(--card)}
+  .dd .no-col{border-left:1px dotted var(--ink40)}
+  .dd h4{font-family:var(--serif);font-size:18px;font-weight:500;margin-bottom:12px}
+  .dd ul{list-style:none}
+  .dd li{font-size:13.5px;padding:7px 0;border-bottom:1px dotted var(--ink12);color:var(--ink)}
+  .dd li:last-child{border:none}
+  .dd .no-col li{color:var(--ink60);text-decoration:line-through;text-decoration-color:rgba(178,58,30,.5);text-decoration-thickness:1px}
+  footer{margin-top:60px;padding-top:18px;border-top:1px solid var(--ink12);display:flex;justify-content:space-between;
+    font-size:11.5px;color:var(--ink60)}
+  footer .mono{font-family:ui-monospace,Menlo,monospace;letter-spacing:.06em}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="masthead">
+    <div class="eyebrow">UI Direction · Corporate Gifting Platform</div>
+    <h1>Ledger &amp; Marigold</h1>
+    <p>A modern Indian stationery house: warm paper, dark ink, one vermillion accent. The sender's portal reads like a beautifully kept ledger; the recipient's page feels like unwrapping a gift. Fraunces for warmth, Schibsted Grotesk for work, hairlines instead of shadows, stamps instead of badges.</p>
+    <div class="chips">
+      <div class="chip paper">Paper<small>#FAF6EE</small></div>
+      <div class="chip ink">Ink<small>#221C14</small></div>
+      <div class="chip verm">Vermillion<small>#B23A1E</small></div>
+      <div class="chip mari">Marigold<small>#D9A441</small></div>
+      <div class="chip green">Green<small>#2E7D52</small></div>
+    </div>
+  </div>
+
+  <div class="section-label"><span class="no">01</span><h2>The recipient page — the gift register</h2><span class="rule"></span></div>
+
+  <div class="duo">
+    <div>
+      <div class="phone">
+        <div class="statusbar"><span></span></div>
+        <div class="rp">
+          <svg class="ornament" width="54" height="54" viewBox="0 0 54 54" fill="none">
+            <g stroke="#221C14" stroke-width="1" opacity=".18">
+              <circle cx="44" cy="10" r="6"/><circle cx="44" cy="10" r="2"/>
+              <path d="M30 10h8M44 16v8M50 10h4M44 0v4"/>
+              <circle cx="30" cy="24" r="3"/><circle cx="16" cy="38" r="1.6" fill="#221C14" stroke="none"/>
+            </g>
+          </svg>
+          <div class="sender-row">
+            <div class="logo-dot">Z</div>
+            <div><div class="from">A gift from</div><div class="co">Zenlytic</div></div>
+          </div>
+          <p class="note">“Happy Diwali, Rahul! Thank you for an incredible year. Pick something you’ll love — from all of us.”</p>
+          <div class="note-sig">— Priya Sharma, People Ops</div>
+          <hr class="perf">
+          <div class="pick-label"><span>Pick your gift</span><b>budget covered ✓</b></div>
+          <div class="gifts">
+            <div class="tag sel">
+              <span class="picked">PICKED</span><span class="hole"></span>
+              <div class="art" style="background:#F3E3C8">
+                <svg width="40" height="34" viewBox="0 0 40 34" fill="none"><path d="M6 14h28v16a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V14z" fill="#B23A1E"/><path d="M4 9h32v5H4z" fill="#93301A"/><path d="M18 9h4v23h-4z" fill="#D9A441"/><path d="M20 9c-5-1-9-6-6-8 3-2 6 4 6 8zm0 0c5-1 9-6 6-8-3-2-6 4-6 8z" fill="#A9721B"/></svg>
+              </div>
+              <h4>Brass Diya &amp; Mithai Hamper</h4>
+              <div class="meta">UtsavBox · ships pan-India</div>
+            </div>
+            <div class="tag">
+              <span class="hole"></span>
+              <div class="art" style="background:#E7EBDD">
+                <svg width="34" height="36" viewBox="0 0 34 36" fill="none"><path d="M10 24h14l-2 10H12l-2-10z" fill="#93301A"/><path d="M17 24V12" stroke="#2E7D52" stroke-width="2"/><path d="M17 14c-6 0-8-5-8-9 6 0 8 5 8 9zm0-2c6-1 7-6 7-9-6 1-7 6-7 9z" fill="#2E7D52"/></svg>
+              </div>
+              <h4>Desk Plant Duo</h4>
+              <div class="meta">Ugaoo · 6,400 pincodes</div>
+            </div>
+            <div class="tag">
+              <span class="hole"></span>
+              <div class="art" style="background:#F0DFD2">
+                <svg width="40" height="30" viewBox="0 0 40 30" fill="none"><rect x="4" y="6" width="32" height="20" rx="2" fill="#D9A441"/><rect x="4" y="11" width="32" height="4" fill="#221C14" opacity=".8"/><rect x="8" y="19" width="12" height="3" rx="1" fill="#FFFDF7"/></svg>
+              </div>
+              <h4>₹1,500 Gift Voucher</h4>
+              <div class="meta">Amazon / Swiggy · instant</div>
+            </div>
+            <div class="tag">
+              <span class="hole"></span>
+              <div class="art" style="background:#E4E0D2">
+                <svg width="38" height="34" viewBox="0 0 38 34" fill="none"><rect x="6" y="10" width="26" height="18" rx="3" fill="#2E7D52"/><rect x="10" y="4" width="18" height="8" rx="2" fill="#221C14" opacity=".85"/><circle cx="19" cy="19" r="5" fill="#FFFDF7"/><circle cx="19" cy="19" r="2.4" fill="#D9A441"/></svg>
+              </div>
+              <h4>Wellness Ritual Box</h4>
+              <div class="meta">Kama-crafted · 3 items</div>
+            </div>
+          </div>
+          <button class="cta">Choose the Diya Hamper →</button>
+          <div class="alt-links"><a href="#">Prefer a gift card instead?</a><a href="#">No thanks, maybe next time</a></div>
+        </div>
+      </div>
+      <p class="phone-caption">No login, no app. The sender’s words are the hero, set in Fraunces. Gift options are parcel tags; the chosen one gets the vermillion border and a rotated “PICKED” stamp. Address entry follows on the next screen with live pincode check.</p>
+    </div>
+
+    <div>
+      <div class="section-label" style="margin-top:0"><span class="no">02</span><h2>The sender portal — the ledger</h2><span class="rule"></span></div>
+      <div class="board">
+        <div class="board-head">
+          <div>
+            <div class="serial">CAMP-0042 · CREATED 01 OCT 2026</div>
+            <h3>Diwali 2026 — Team Zenlytic</h3>
+          </div>
+          <span class="stamp">Active</span>
+        </div>
+        <div class="board-body">
+          <div class="kpis tnum">
+            <div class="kpi"><div class="v">88<em>%</em></div><div class="k">Redemption</div></div>
+            <div class="kpi"><div class="v">₹5,41,300</div><div class="k">Spent of ₹6,28,425 held</div></div>
+            <div class="kpi"><div class="v">₹87,125</div><div class="k">Returned to wallet</div></div>
+          </div>
+          <div class="funnel tnum">
+            <div class="frow"><span class="stage">Invited</span><div class="barwrap" title="399 invited — 100%"><div class="bar" style="width:100%"></div></div><span class="num">399 <span>· 100%</span></span></div>
+            <div class="frow"><span class="stage">Viewed</span><div class="barwrap" title="371 viewed — 93%"><div class="bar" style="width:93%"></div></div><span class="num">371 <span>· 93%</span></span></div>
+            <div class="frow"><span class="stage">Redeemed</span><div class="barwrap" title="352 redeemed — 88%"><div class="bar" style="width:88%"></div></div><span class="num">352 <span>· 88%</span></span></div>
+            <div class="frow"><span class="stage">Shipped</span><div class="barwrap" title="348 shipped — 87%"><div class="bar" style="width:87%"></div></div><span class="num">348 <span>· 87%</span></span></div>
+            <div class="frow"><span class="stage">Delivered</span><div class="barwrap" title="345 delivered — 86%"><div class="bar" style="width:86%"></div></div><span class="num">345 <span>· 86%</span></span></div>
+          </div>
+          <div class="ledger">
+            <div class="ledger-title"><h4>Wallet ledger</h4><div class="bal tnum">Balance ₹2,41,880</div></div>
+            <table class="tnum">
+              <thead><tr><th>Entry</th><th>Ref</th><th class="r">Amount</th><th class="r">Balance</th></tr></thead>
+              <tbody>
+                <tr><td><span class="rowchip">TOPUP</span> NEFT received</td><td class="serial">PAY-0311</td><td class="r amt-pos">+ ₹6,50,000</td><td class="r">₹6,70,205</td></tr>
+                <tr><td><span class="rowchip">HOLD</span> Campaign activation</td><td class="serial">CAMP-0042</td><td class="r amt-neg">− ₹6,28,425</td><td class="r">₹41,780</td></tr>
+                <tr><td><span class="rowchip">RELEASE</span> Opt-outs &amp; unspent</td><td class="serial">CAMP-0042</td><td class="r amt-pos">+ ₹87,125</td><td class="r">₹1,28,905</td></tr>
+                <tr><td><span class="rowchip">CHARGE</span> Orders fulfilled (352)</td><td class="serial">CAMP-0042</td><td class="r amt-neg">− ₹5,41,300</td><td class="r">₹2,41,880</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <p class="phone-caption" style="max-width:100%">Dense, tabular, calm. Serial numbers as design elements, a rotated stamp instead of a pill badge, single-hue funnel bars with direct labels, and money that always lines up (tabular numerals). Depth from hairlines and paper tones — not a shadow in sight.</p>
+    </div>
+  </div>
+
+  <div class="section-label"><span class="no">03</span><h2>House rules</h2><span class="rule"></span></div>
+  <div class="dd">
+    <div>
+      <h4>Always</h4>
+      <ul>
+        <li>Fraunces for headings &amp; the sender’s message; Schibsted Grotesk for UI</li>
+        <li>Paper background, white cards, 1px hairline borders</li>
+        <li>One accent (vermillion) — under 5% of any screen</li>
+        <li>Serial numbers, stamps, parcel tags, perforated dividers</li>
+        <li>Tabular numerals wherever money or counts appear</li>
+        <li>One moment of celebration: the redemption confirm</li>
+      </ul>
+    </div>
+    <div class="no-col">
+      <h4>Never</h4>
+      <ul>
+        <li>Inter, gradients, glassmorphism, purple</li>
+        <li>rounded-2xl cards floating on drop shadows</li>
+        <li>Emoji in headings or UI chrome</li>
+        <li>Icon-in-circle feature grids and mascot empty-states</li>
+        <li>Pie charts, dual axes, rainbow series</li>
+        <li>Untouched shadcn defaults shipped as “design”</li>
+      </ul>
+    </div>
+  </div>
+
+  <footer>
+    <span>Ledger &amp; Marigold · design direction v1</span>
+    <span class="mono">DOC-0007 · JUL 2026</span>
+  </footer>
+</div>
+</body>
+</html>
