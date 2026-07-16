@@ -1,16 +1,21 @@
 import { notFound } from 'next/navigation';
 import RecipientExperience from './recipient-experience';
 
+import { GlobalFooter } from '@/components/Footer';
+
 export default async function RecipientPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
   
   if (!token || token.length !== 32) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-stone-50">
-        <div className="text-center">
-          <h1 className="text-xl font-serif text-stone-900 mb-2">This gift link is not available</h1>
-          <p className="text-stone-500 text-sm">Please check the link or contact your organization.</p>
+      <div className="min-h-screen flex flex-col bg-stone-50">
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <h1 className="text-xl font-serif text-stone-900 mb-2">This gift link is not available</h1>
+            <p className="text-stone-500 text-sm">Please check the link or contact your organization.</p>
+          </div>
         </div>
+        <GlobalFooter />
       </div>
     );
   }
@@ -22,11 +27,14 @@ export default async function RecipientPage({ params }: { params: Promise<{ toke
 
   if (!res.ok) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-stone-50">
-        <div className="text-center">
-          <h1 className="text-xl font-serif text-stone-900 mb-2">This gift link is not available</h1>
-          <p className="text-stone-500 text-sm">Please check the link or contact your organization.</p>
+      <div className="min-h-screen flex flex-col bg-stone-50">
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <h1 className="text-xl font-serif text-stone-900 mb-2">This gift link is not available</h1>
+            <p className="text-stone-500 text-sm">Please check the link or contact your organization.</p>
+          </div>
         </div>
+        <GlobalFooter />
       </div>
     );
   }
@@ -34,8 +42,11 @@ export default async function RecipientPage({ params }: { params: Promise<{ toke
   const data = await res.json();
 
   return (
-    <div className="min-h-screen bg-stone-50 selection:bg-stone-200">
-      <RecipientExperience token={token} initialData={data} />
+    <div className="min-h-screen flex flex-col bg-stone-50 selection:bg-stone-200">
+      <div className="flex-1">
+        <RecipientExperience token={token} initialData={data} />
+      </div>
+      <GlobalFooter />
     </div>
   );
 }

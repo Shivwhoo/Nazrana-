@@ -1,8 +1,9 @@
 import Link from 'next/link';
 import { auth } from '@/auth'
 import { redirect } from 'next/navigation';
-import { Home, Users, Settings, Gift, BookOpen, LayoutGrid, Wallet } from 'lucide-react';
+import { Users, Settings, Home, BookOpen, LayoutGrid, Wallet, Gift } from 'lucide-react';
 import { SignOutButton } from './sign-out-button';
+import { NazranaLogo } from '@/components/NazranaLogo';
 
 export default async function DashboardLayout({
   children,
@@ -21,8 +22,8 @@ export default async function DashboardLayout({
       {/* Left Rail Navigation */}
       <aside className="w-64 border-r border-stone-200 bg-white flex flex-col shadow-sm z-10">
         <div className="h-16 flex items-center px-6 border-b border-stone-100">
-          <Gift className="h-6 w-6 text-vermillion-600 mr-2" />
-          <span className="font-serif font-bold text-xl tracking-tight text-stone-900">Gifting</span>
+          <NazranaLogo size={24} className="text-stone-900 mr-2" />
+          <span className="font-serif font-bold text-xl tracking-tight text-stone-900">Nazrana</span>
         </div>
         
         <nav className="flex-1 overflow-y-auto py-6 px-4 space-y-1">
@@ -60,6 +61,9 @@ export default async function DashboardLayout({
             </div>
           </div>
           <SignOutButton />
+          <div className="mt-6 text-center text-[10px] tracking-[1.5px] uppercase text-stone-400 font-sans">
+            powered by edmentor
+          </div>
         </div>
       </aside>
 

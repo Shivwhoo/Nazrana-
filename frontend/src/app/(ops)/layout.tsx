@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { SignOutButton } from '../(dashboard)/[orgId]/sign-out-button';
 import { LayoutGrid, Package, Users, ShieldAlert, ShoppingCart } from 'lucide-react';
+import { NazranaLogo } from '@/components/NazranaLogo';
 
 export default async function OpsLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
@@ -14,7 +15,7 @@ export default async function OpsLayout({ children }: { children: React.ReactNod
       {/* Sidebar — pure monochrome, no decoration */}
       <aside className="w-56 border-r border-stone-300 bg-stone-50 flex flex-col">
         <div className="h-14 flex items-center px-5 border-b border-stone-200">
-          <ShieldAlert className="h-5 w-5 mr-2 text-stone-700" />
+          <NazranaLogo size={20} className="text-stone-700 mr-2" />
           <span className="text-sm font-bold uppercase tracking-widest text-stone-700">Ops Console</span>
         </div>
 
@@ -38,6 +39,9 @@ export default async function OpsLayout({ children }: { children: React.ReactNod
           <p className="truncate">{session.user?.email}</p>
           <p className="font-medium text-stone-600 mt-0.5">Platform Admin</p>
           <SignOutButton />
+          <div className="mt-6 text-center text-[10px] tracking-[1.5px] uppercase text-stone-400 font-sans">
+            powered by edmentor
+          </div>
         </div>
       </aside>
 

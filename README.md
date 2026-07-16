@@ -54,19 +54,27 @@ Make sure you have the following installed on your system:
 - **PostgreSQL** (Running locally or via Docker)
 - **Redis** (Running locally or via Docker)
 
-### 1. Installation
+### 1. Clone the Repository
 
-Clone the repository and install all dependencies from the root:
+Clone the repository to your local machine and navigate into the project directory:
 ```bash
-git clone https://github.com/yourusername/corporate-gifting.git
-cd corporate-gifting
+git clone https://github.com/Shivwhoo/Nazrana-.git
+cd "Nazrana-"
+```
+
+### 2. Install Dependencies
+
+Install all dependencies from the root directory using pnpm:
+```bash
 pnpm install
 ```
 
-### 2. Environment Variables
+### 3. Environment Variables
 
-Create a `.env` file in the `backend/` directory based on the following template:
+You need to set up environment variables for both the backend and frontend.
 
+**Backend (.env)**
+Create a `.env` file in the `backend/` directory based on this configuration:
 ```env
 DATABASE_URL="postgresql://postgres:123456@localhost:5432/gifting?schema=public"
 REDIS_URL="redis://localhost:6379"
@@ -74,35 +82,46 @@ AUTH_SECRET="your-super-secret-key-change-in-production"
 FRONTEND_URL="http://localhost:3000"
 
 # Payment Gateway
-RAZORPAY_KEY_ID="rzp_test_xxxx"
-RAZORPAY_KEY_SECRET="xxxx"
+RAZORPAY_KEY_ID="rzp_test_TDu7Uq08Y2LfUJ"
+RAZORPAY_KEY_SECRET="viSqTjsFcUUVFLqnVXxA8t5m"
 
 # SMTP Settings
 SMTP_HOST="smtp.hostinger.com"
 SMTP_PORT=465
-EMAIL_USER="noreply@yourdomain.com"
-EMAIL_PASS="your-password"
+SMTP_USER="noreply@theedmentor.com"
+SMTP_PASS="Oi28klxvyBNsHv?init"
+EMAIL_USER="noreply@theedmentor.com"
+EMAIL_PASS="Oi28klxvyBNsHv?init"
 ```
 
-### 3. Database Setup
+**Frontend (.env)**
+Create a `.env` file in the `frontend/` directory with the following:
+```env
+NEXT_PUBLIC_API_URL="http://localhost:4000"
+AUTH_SECRET="your-super-secret-key-change-in-production"
+AUTH_URL="http://localhost:3000/api/auth"
+NEXT_PUBLIC_RAZORPAY_KEY_ID="rzp_test_TDu7Uq08Y2LfUJ"
+```
 
-Run the Prisma migrations to set up your PostgreSQL schema, and seed the database with the initial platform admin and catalog products.
+### 4. Database Setup
+
+Ensure your local PostgreSQL and Redis servers are running. Then, run the Prisma migrations to set up your PostgreSQL schema and seed the database with the initial platform admin and catalog products.
 
 ```bash
 pnpm db:migrate
 pnpm --filter "@gifting/prisma" run seed
 ```
 
-### 4. Running the Development Server
+### 5. Running the Development Server
 
-Start the entire monorepo stack (Frontend, Backend API, and Worker) with a single command:
+Start the entire monorepo stack (Frontend, Backend API, and Worker) with a single command from the root directory:
 
 ```bash
 pnpm dev
 ```
 
 - **Frontend Application**: [http://localhost:3000](http://localhost:3000)
-- **Backend API Server**: [http://localhost:3001](http://localhost:3001)
+- **Backend API Server**: [http://localhost:4000](http://localhost:4000) (Note: runs on 4000)
 
 *(Both services, including the background worker, will automatically reload upon file changes).*
 
