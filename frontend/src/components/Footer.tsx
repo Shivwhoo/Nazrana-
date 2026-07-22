@@ -18,26 +18,24 @@ export function GlobalFooter() {
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-sm lg:w-2/3">
           <div className="flex flex-col gap-3">
-            <h4 className="font-semibold text-white mb-2">Learn</h4>
-            <Link href="#" className="text-stone-400 hover:text-white transition-colors">Courses</Link>
-            <Link href="#" className="text-stone-400 hover:text-white transition-colors">Events</Link>
-            <Link href="#" className="text-stone-400 hover:text-white transition-colors">Scholarships</Link>
+            <h4 className="font-semibold text-white mb-2">Product</h4>
+            <Link href="/pricing" className="text-stone-400 hover:text-white transition-colors">Pricing</Link>
+            <Link href="/about" className="text-stone-400 hover:text-white transition-colors">About</Link>
+            <Link href="/login" className="text-stone-400 hover:text-white transition-colors">Sign In</Link>
           </div>
           <div className="flex flex-col gap-3">
             <h4 className="font-semibold text-white mb-2">Company</h4>
-            <Link href="#" className="text-stone-400 hover:text-white transition-colors">About</Link>
-            <Link href="#" className="text-stone-400 hover:text-white transition-colors">Blog</Link>
-            <Link href="#" className="text-stone-400 hover:text-white transition-colors">Contact</Link>
+            <Link href="/about" className="text-stone-400 hover:text-white transition-colors">About</Link>
+            <a href="mailto:hello@nazrana.in" className="text-stone-400 hover:text-white transition-colors">Contact</a>
+          </div>
+          <div className="flex flex-col gap-3">
+            <h4 className="font-semibold text-white mb-2">Legal</h4>
+            <Link href="/privacy" className="text-stone-400 hover:text-white transition-colors">Privacy Policy</Link>
+            <Link href="/terms" className="text-stone-400 hover:text-white transition-colors">Terms of Service</Link>
           </div>
           <div className="flex flex-col gap-3">
             <h4 className="font-semibold text-white mb-2">Support</h4>
-            <Link href="#" className="text-stone-400 hover:text-white transition-colors">Privacy Policy</Link>
-            <Link href="#" className="text-stone-400 hover:text-white transition-colors">Terms</Link>
-            <a href="mailto:help@theedmentor.com" className="text-stone-400 hover:text-white transition-colors">help@theedmentor.com</a>
-          </div>
-          <div className="flex flex-col gap-3">
-            <h4 className="font-semibold text-white mb-2">Products</h4>
-            <Link href="#" className="text-stone-400 hover:text-white transition-colors">Platform</Link>
+            <a href="mailto:hello@nazrana.in" className="text-stone-400 hover:text-white transition-colors">hello@nazrana.in</a>
           </div>
         </div>
       </div>

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { Loader2, Download, PackageOpen, Eye, Gift, Truck, CheckCircle2, AlertCircle, Upload } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -15,6 +15,7 @@ export default function CampaignReportPage() {
   const [analytics, setAnalytics] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   
+  const router = useRouter();
   const [uploading, setUploading] = useState(false);
   const [importStatus, setImportStatus] = useState<any>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -201,14 +202,22 @@ export default function CampaignReportPage() {
           </button>
           
           {campaign.status === 'DRAFT' && (
-            <button 
-              onClick={() => router.push(`/${orgId}/campaigns/new?id=${campaignId}`)}
-              disabled={uploading}
-              className="inline-flex items-center bg-vermillion-600 text-white px-4 py-2 rounded text-sm hover:bg-vermillion-700 transition-colors shadow-sm disabled:opacity-50"
-            >
-              <CheckCircle2 className="w-4 h-4 mr-2" />
-              Activate Campaign
-            </button>
+            <>
+              <button 
+                onClick={handleActivate}
+                disabled={uploading}
+                className="inline-flex items-center bg-vermillion-600 text-white px-4 py-2 rounded text-sm hover:bg-vermillion-700 transition-colors shadow-sm disabled:opacity-50"
+              >
+                <CheckCircle2 className="w-4 h-4 mr-2" />
+                Activate Campaign
+              </button>
+              <button 
+                onClick={() => router.push(`/${orgId}/campaigns/new?id=${campaignId}`)}
+                className="inline-flex items-center bg-white text-stone-700 border border-stone-300 px-4 py-2 rounded text-sm hover:bg-stone-50 transition-colors shadow-sm"
+              >
+                Edit Campaign
+              </button>
+            </>
           )}
 
           <button 

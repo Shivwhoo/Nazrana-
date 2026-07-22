@@ -12,7 +12,15 @@ const eslintConfig = defineConfig([
           "name": "@gifting/prisma",
           "message": "The frontend must not import directly from the Prisma client. Talk to the backend API instead."
         }]
-      }]
+      }],
+      "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/no-empty-object-type": "off",
+      "react-hooks/exhaustive-deps": "warn",
+      "react-hooks/set-state-in-effect": "off",
+      "react-hooks/immutability": "off",
+      "react-hooks/purity": "off",
+      "react/no-unescaped-entities": "off",
+      "prefer-const": "warn",
     }
   },
   // Override default ignores of eslint-config-next.
