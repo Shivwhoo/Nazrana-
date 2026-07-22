@@ -139,6 +139,7 @@ export default function CatalogPage({ params }: { params: Promise<{ orgId: strin
   // Fetch products when filters change
   useEffect(() => {
     if (!session) return;
+
     setLoading(true);
 
     const params = new URLSearchParams();

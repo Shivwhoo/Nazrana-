@@ -12,17 +12,21 @@ export const orgsRouter = Router();
 // Protected routes below
 orgsRouter.use(authMiddleware);
 
+const updateOrgSchema = z.object({
+  name: z.string().min(1).optional(),
+  gstin: z.string().length(15).optional(),
+  stateCode: z.string().length(2).optional(),
+  brandingDefaults: z.object({
+    logoUrl: z.string().url().optional().nullable(),
+    accentColor: z.string().optional(),
+  }).optional(),
+});
+
 orgsRouter.post('/', async (req: AuthRequest, res) => {
   try {
     const data = createOrgSchema.parse(req.body);
     const userId = req.user!.id;
 
-    // Check if user already owns an org (optional, but typically 1 org per user for simplicity)
-    const existing = await prisma.membership.findFirst({
-      where: { userId, role: 'OWNER' }
-    });
-
-    // In a multi-tenant setup, they could have many, but let's allow it for now.
     const org = await OrgService.createOrganization(userId, data);
     return res.status(201).json({ org });
   } catch (error) {
@@ -30,6 +34,39 @@ orgsRouter.post('/', async (req: AuthRequest, res) => {
       return res.status(400).json({ error: error.errors });
     }
     logError('POST /orgs', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Update organization settings
+orgsRouter.put('/:orgId', requireRole(['OWNER', 'ADMIN']), async (req: AuthRequest, res) => {
+  try {
+    const orgId = req.params.orgId;
+    const data = updateOrgSchema.parse(req.body);
+
+    const updateData: any = {};
+    if (data.name) updateData.name = data.name;
+    if (data.gstin) updateData.gstin = data.gstin;
+    if (data.stateCode) updateData.stateCode = data.stateCode;
+    if (data.brandingDefaults) {
+      const existing = await prisma.organization.findUnique({ where: { id: orgId } });
+      updateData.brandingDefaults = {
+        ...(existing?.brandingDefaults as any || {}),
+        ...data.brandingDefaults,
+      };
+    }
+
+    const org = await prisma.organization.update({
+      where: { id: orgId },
+      data: updateData,
+    });
+
+    return res.json({ org });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: error.errors });
+    }
+    logError('PUT /orgs/:orgId', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 });
